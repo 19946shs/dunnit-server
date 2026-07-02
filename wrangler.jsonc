@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "dunnit-server",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-01-01",
+  // supabase-js needs Node built-ins (stream, events, etc.) on Workers.
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+  "vars": {
+    // Public values — safe to commit. The service_role key is NOT here; if ever
+    // needed for admin ops, set it as a secret: `wrangler secret put SUPABASE_SERVICE_ROLE_KEY`.
+    "SUPABASE_URL": "https://lqratonbjxpnjlybmskz.supabase.co",
+    "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_HuFvOOE0aOIcV8nHhxUhtw_tvOrQ7XR",
+    // Comma-separated allowed CORS origins, or "*" for any (fine for dev).
+    "ALLOWED_ORIGINS": "*"
+  }
+}
