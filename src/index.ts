@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { journalRoutes } from './routes/journal';
+import { tagsRoutes } from './routes/tags';
 import type { Env, Variables } from './types';
 
 const app = new Hono<{ Bindings: Env; Variables: Variables }>();
@@ -19,6 +20,7 @@ app.use('*', (c, next) => {
 app.get('/health', (c) => c.json({ ok: true }));
 
 app.route('/journal', journalRoutes);
+app.route('/tags', tagsRoutes);
 
 app.onError((err, c) => {
   // Surface Postgres constraint violations (CHECK, unique, etc.) as 400s.

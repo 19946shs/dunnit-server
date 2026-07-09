@@ -80,3 +80,9 @@ export type FitnessEntryInput = {
   duration_min?: number | null;
   note?: string;
 };
+
+/** A `prefix/word` tag reference. */
+export type TagRef = { prefix: string; word: string };
+
+/** Top words per prefix, e.g. { p: ['website', ...], w: [...] }. */
+export type FrequentTags = Record<string, string[]>;
