@@ -26,8 +26,6 @@ export type JournalEntry = {
   /** YYYY-MM-DD */
   entry_date: string;
 
-  mood: number | null;
-  energy: number | null;
   sleep_hours: number | null;
   tags: string[];
   projects: string[];
@@ -51,3 +49,34 @@ export type JournalEntry = {
 export type JournalEntryPatch = Partial<
   Omit<JournalEntry, 'id' | 'user_id' | 'entry_date' | 'created_at' | 'updated_at'>
 >;
+
+/** A single timestamped mood/energy check-in (time series). */
+export type MetricReading = {
+  id: string;
+  user_id: string;
+  entry_date: string;
+  recorded_at: string;
+  mood: number | null;
+  energy: number | null;
+};
+
+/** New-reading payload; at least one metric must be present. */
+export type MetricReadingInput = { mood?: number | null; energy?: number | null };
+
+/** A single timestamped fitness activity (time series). */
+export type FitnessEntry = {
+  id: string;
+  user_id: string;
+  entry_date: string;
+  recorded_at: string;
+  activity: string;
+  duration_min: number | null;
+  note: string;
+};
+
+/** New-fitness payload; `activity` is required. */
+export type FitnessEntryInput = {
+  activity: string;
+  duration_min?: number | null;
+  note?: string;
+};
