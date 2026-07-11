@@ -13,7 +13,7 @@ app.use('*', (c, next) => {
   return cors({
     origin: origins.includes('*') ? '*' : origins,
     allowHeaders: ['Content-Type', 'Authorization'],
-    allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   })(c, next);
 });
 

@@ -81,8 +81,38 @@ export type FitnessEntryInput = {
   note?: string;
 };
 
+/** Sections that hold timestamped log entries. */
+export const LOG_SECTIONS = ['morning', 'reflections', 'tomorrow'] as const;
+export type LogSection = (typeof LOG_SECTIONS)[number];
+
+/** One timestamped log entry. Body may contain newlines. */
+export type JournalLog = {
+  id: string;
+  user_id: string;
+  entry_date: string;
+  section: LogSection;
+  recorded_at: string;
+  body: string;
+  created_at: string;
+  updated_at: string;
+};
+
+/** New-log payload. */
+export type JournalLogInput = { section: LogSection; body: string };
+
 /** A `prefix/word` tag reference. */
 export type TagRef = { prefix: string; word: string };
 
 /** Top words per prefix, e.g. { p: ['website', ...], w: [...] }. */
 export type FrequentTags = Record<string, string[]>;
+
+/** Everything a day view needs, in one response (see the /bootstrap route). */
+export type Bootstrap = {
+  entry: JournalEntry | null;
+  logs: JournalLog[];
+  readings: MetricReading[];
+  fitness: FitnessEntry[];
+  /** Previous day's `tomorrow` logs (the "yesterday" carryover). */
+  carryover: JournalLog[];
+  frequent: FrequentTags;
+};

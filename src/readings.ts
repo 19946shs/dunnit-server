@@ -27,6 +27,7 @@ export async function addReading(
   userId: string,
   date: string,
   input: MetricReadingInput,
+  recordedAt: string,
 ): Promise<MetricReading> {
   const { data, error } = await client
     .from(TABLE)
@@ -35,6 +36,7 @@ export async function addReading(
       entry_date: date,
       mood: input.mood ?? null,
       energy: input.energy ?? null,
+      recorded_at: recordedAt,
     })
     .select()
     .single();

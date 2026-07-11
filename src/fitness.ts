@@ -26,6 +26,7 @@ export async function addFitness(
   userId: string,
   date: string,
   input: FitnessEntryInput,
+  recordedAt: string,
 ): Promise<FitnessEntry> {
   const { data, error } = await client
     .from(TABLE)
@@ -35,6 +36,7 @@ export async function addFitness(
       activity: input.activity,
       duration_min: input.duration_min ?? null,
       note: input.note ?? '',
+      recorded_at: recordedAt,
     })
     .select()
     .single();
