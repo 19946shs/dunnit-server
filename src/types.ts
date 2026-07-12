@@ -7,6 +7,14 @@ export interface Env {
   ALLOWED_ORIGINS?: string;
   /** Admin/service key — only present if set as a secret; unused by journal routes. */
   SUPABASE_SERVICE_ROLE_KEY?: string;
+  /**
+   * Google OAuth client credentials — the SAME client configured in Supabase's
+   * Google provider. Set as secrets (`wrangler secret put …`), not committed vars.
+   * Used by the /calendar routes to refresh access tokens from a stored refresh
+   * token. Only present when the calendar feature is provisioned.
+   */
+  GOOGLE_CLIENT_ID?: string;
+  GOOGLE_CLIENT_SECRET?: string;
 }
 
 /** Per-request values attached by the auth middleware. */
@@ -105,6 +113,23 @@ export type TagRef = { prefix: string; word: string };
 
 /** Top words per prefix, e.g. { p: ['website', ...], w: [...] }. */
 export type FrequentTags = Record<string, string[]>;
+
+/** A stored Google OAuth refresh token (one row per user). */
+export type GoogleCredential = {
+  user_id: string;
+  refresh_token: string;
+  created_at: string;
+  updated_at: string;
+};
+
+/** Payload the app sends to create a calendar event. `start`/`end` are RFC3339 instants. */
+export type CalendarEventInput = {
+  summary: string;
+  start: string;
+  end: string;
+  /** IANA timezone (e.g. "Asia/Kolkata"); optional, Google infers from the offset otherwise. */
+  timeZone?: string;
+};
 
 /** Everything a day view needs, in one response (see the /bootstrap route). */
 export type Bootstrap = {

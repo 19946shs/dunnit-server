@@ -13,5 +13,10 @@
     "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_HuFvOOE0aOIcV8nHhxUhtw_tvOrQ7XR",
     // Comma-separated allowed CORS origins, or "*" for any (fine for dev).
     "ALLOWED_ORIGINS": "*"
+    // Google Calendar (the /calendar routes) needs the SAME Google OAuth client
+    // credentials configured in Supabase's Google provider. These are SECRETS —
+    // do NOT add them here. Set them with:
+    //   wrangler secret put GOOGLE_CLIENT_ID
+    //   wrangler secret put GOOGLE_CLIENT_SECRET
   }
 }
