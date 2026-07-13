@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { JournalLog, JournalLogInput, LogSection } from './types';
+import type { JournalLog, JournalLogInput, JournalLogPatch, LogSection } from './types';
 
 const TABLE = 'journal_logs';
 
@@ -46,11 +46,17 @@ export async function addLog(
 export async function updateLog(
   client: SupabaseClient,
   id: string,
-  body: string,
+  patch: JournalLogPatch,
 ): Promise<JournalLog> {
+  // Only forward the fields the caller actually set (avoid clobbering with undefined).
+  const update: Record<string, unknown> = {};
+  if (patch.body !== undefined) update.body = patch.body;
+  if (patch.calendar_event_id !== undefined) update.calendar_event_id = patch.calendar_event_id;
+  if (patch.calendar_completed !== undefined) update.calendar_completed = patch.calendar_completed;
+
   const { data, error } = await client
     .from(TABLE)
-    .update({ body })
+    .update(update)
     .eq('id', id)
     .select()
     .single();

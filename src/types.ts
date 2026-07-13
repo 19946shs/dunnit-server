@@ -101,8 +101,19 @@ export type JournalLog = {
   section: LogSection;
   recorded_at: string;
   body: string;
+  /** Google Calendar event id, if this log (a `!` command) scheduled one. */
+  calendar_event_id: string | null;
+  /** Whether the linked calendar event has been checked off / completed. */
+  calendar_completed: boolean;
   created_at: string;
   updated_at: string;
+};
+
+/** Fields the PATCH logs route may update. */
+export type JournalLogPatch = {
+  body?: string;
+  calendar_event_id?: string | null;
+  calendar_completed?: boolean;
 };
 
 /** New-log payload. */
@@ -122,13 +133,14 @@ export type GoogleCredential = {
   updated_at: string;
 };
 
-/** Payload the app sends to create a calendar event. `start`/`end` are RFC3339 instants. */
-export type CalendarEventInput = {
-  summary: string;
-  start: string;
-  end: string;
-  /** IANA timezone (e.g. "Asia/Kolkata"); optional, Google infers from the offset otherwise. */
-  timeZone?: string;
+/**
+ * Payload the app sends to create a Google Task. `due` is an RFC3339 timestamp,
+ * but the Tasks API only records the DATE — the time is preserved in `notes`.
+ */
+export type TaskInput = {
+  title: string;
+  notes?: string;
+  due?: string;
 };
 
 /** Everything a day view needs, in one response (see the /bootstrap route). */

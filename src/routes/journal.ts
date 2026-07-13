@@ -196,9 +196,31 @@ journalRoutes.patch('/:date/logs/:id', async (c) => {
   const date = c.req.param('date');
   if (!DATE_RE.test(date)) return c.json({ error: 'date must be YYYY-MM-DD' }, 400);
   const raw = await c.req.json().catch(() => ({}));
-  const body = typeof raw?.body === 'string' ? raw.body.trim() : '';
-  if (!body) return c.json({ error: 'body is required' }, 400);
-  const row = await logs.updateLog(c.get('supabase'), c.req.param('id'), body);
+
+  const patch: { body?: string; calendar_event_id?: string | null; calendar_completed?: boolean } = {};
+  if (raw?.body !== undefined) {
+    const body = typeof raw.body === 'string' ? raw.body.trim() : '';
+    if (!body) return c.json({ error: 'body must be non-empty when provided' }, 400);
+    patch.body = body;
+  }
+  // calendar_event_id may be a string (link) or null (unlink).
+  if (raw?.calendar_event_id !== undefined) {
+    if (raw.calendar_event_id !== null && typeof raw.calendar_event_id !== 'string') {
+      return c.json({ error: 'calendar_event_id must be a string or null' }, 400);
+    }
+    patch.calendar_event_id = raw.calendar_event_id;
+  }
+  if (raw?.calendar_completed !== undefined) {
+    if (typeof raw.calendar_completed !== 'boolean') {
+      return c.json({ error: 'calendar_completed must be a boolean' }, 400);
+    }
+    patch.calendar_completed = raw.calendar_completed;
+  }
+
+  if (Object.keys(patch).length === 0) {
+    return c.json({ error: 'no updatable fields provided' }, 400);
+  }
+  const row = await logs.updateLog(c.get('supabase'), c.req.param('id'), patch);
   return c.json(row);
 });
 

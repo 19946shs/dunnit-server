@@ -1,12 +1,12 @@
-import type { CalendarEventInput, Env } from './types';
+import type { Env, TaskInput } from './types';
 
 /**
- * Thin wrappers over Google's OAuth token endpoint and Calendar API. Kept free
- * of Hono/Supabase so the calendar route (and any future MCP tool) can reuse it.
+ * Thin wrappers over Google's OAuth token endpoint and Tasks API. Kept free of
+ * Hono/Supabase so the tasks route (and any future MCP tool) can reuse it.
  */
 
 const TOKEN_URL = 'https://oauth2.googleapis.com/token';
-const EVENTS_URL = 'https://www.googleapis.com/calendar/v3/calendars/primary/events';
+const TASKS_URL = 'https://tasks.googleapis.com/tasks/v1/lists/@default/tasks';
 
 /** A refresh token that Google has rejected (revoked / consent removed). */
 export class RefreshTokenInvalidError extends Error {
@@ -55,36 +55,55 @@ export async function refreshAccessToken(env: Env, refreshToken: string): Promis
   return data.access_token;
 }
 
-/** The subset of a Google Calendar event we return to the app. */
-export type CalendarEvent = {
+/** The subset of a Google Task we return to the app. */
+export type GoogleTask = {
   id: string;
-  htmlLink: string;
-  summary: string;
-  start: { dateTime?: string; timeZone?: string };
-  end: { dateTime?: string; timeZone?: string };
+  title: string;
+  status: 'needsAction' | 'completed';
+  due?: string;
+  notes?: string;
 };
 
-/** Insert an event on the user's primary calendar with a fresh access token. */
-export async function insertEvent(
-  accessToken: string,
-  input: CalendarEventInput,
-): Promise<CalendarEvent> {
-  const res = await fetch(EVENTS_URL, {
+/** Insert a task on the user's default task list with a fresh access token. */
+export async function insertTask(accessToken: string, input: TaskInput): Promise<GoogleTask> {
+  const res = await fetch(TASKS_URL, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      summary: input.summary,
-      start: { dateTime: input.start, timeZone: input.timeZone },
-      end: { dateTime: input.end, timeZone: input.timeZone },
+      title: input.title,
+      notes: input.notes,
+      due: input.due,
     }),
   });
 
-  const data = (await res.json().catch(() => ({}))) as CalendarEvent & { error?: unknown };
+  const data = (await res.json().catch(() => ({}))) as GoogleTask & { error?: unknown };
   if (!res.ok) {
-    throw new Error(`Google Calendar insert failed (${res.status})`);
+    throw new Error(`Google Tasks insert failed (${res.status})`);
   }
   return data;
+}
+
+/**
+ * Mark a task complete (or reopen it) via the Tasks API's native `status`.
+ * Idempotent. If the task was deleted on Google (404/410) we treat it as a
+ * no-op success so the log's checkbox still works.
+ */
+export async function setTaskCompleted(
+  accessToken: string,
+  taskId: string,
+  completed: boolean,
+): Promise<void> {
+  const res = await fetch(`${TASKS_URL}/${encodeURIComponent(taskId)}`, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ status: completed ? 'completed' : 'needsAction' }),
+  });
+  if (res.status === 404 || res.status === 410) return; // task gone — nothing to do
+  if (!res.ok) throw new Error(`Google Tasks update failed (${res.status})`);
 }

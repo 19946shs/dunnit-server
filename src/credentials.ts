@@ -9,7 +9,7 @@ const TABLE = 'google_credentials';
  * RLS enforces ownership, so queries don't filter by user_id.
  */
 
-/** The caller's stored refresh token, or null if Calendar isn't connected. */
+/** The caller's stored refresh token, or null if Google isn't connected. */
 export async function getCredential(client: SupabaseClient): Promise<GoogleCredential | null> {
   const { data, error } = await client.from(TABLE).select('*').maybeSingle();
   if (error) throw error;
