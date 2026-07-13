@@ -143,6 +143,18 @@ export type TaskInput = {
   due?: string;
 };
 
+/**
+ * Payload the app sends to create a Google Calendar event (the `!!` sigil).
+ * `start`/`end` are RFC3339 instants — the Calendar API keeps the time-of-day.
+ */
+export type CalendarEventInput = {
+  summary: string;
+  start: string;
+  end: string;
+  /** IANA timezone (e.g. "Asia/Kolkata"); optional, Google infers from the offset otherwise. */
+  timeZone?: string;
+};
+
 /** Everything a day view needs, in one response (see the /bootstrap route). */
 export type Bootstrap = {
   entry: JournalEntry | null;

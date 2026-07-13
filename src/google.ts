@@ -1,12 +1,14 @@
-import type { Env, TaskInput } from './types';
+import type { CalendarEventInput, Env, TaskInput } from './types';
 
 /**
- * Thin wrappers over Google's OAuth token endpoint and Tasks API. Kept free of
- * Hono/Supabase so the tasks route (and any future MCP tool) can reuse it.
+ * Thin wrappers over Google's OAuth token endpoint, Tasks API, and Calendar API.
+ * Kept free of Hono/Supabase so the /google route (and any future MCP tool) can
+ * reuse it.
  */
 
 const TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const TASKS_URL = 'https://tasks.googleapis.com/tasks/v1/lists/@default/tasks';
+const EVENTS_URL = 'https://www.googleapis.com/calendar/v3/calendars/primary/events';
 
 /** A refresh token that Google has rejected (revoked / consent removed). */
 export class RefreshTokenInvalidError extends Error {
@@ -106,4 +108,38 @@ export async function setTaskCompleted(
   });
   if (res.status === 404 || res.status === 410) return; // task gone — nothing to do
   if (!res.ok) throw new Error(`Google Tasks update failed (${res.status})`);
+}
+
+/** The subset of a Google Calendar event we return to the app. */
+export type GoogleEvent = {
+  id: string;
+  htmlLink: string;
+  summary: string;
+  start: { dateTime?: string; timeZone?: string };
+  end: { dateTime?: string; timeZone?: string };
+};
+
+/** Insert an event on the user's primary calendar with a fresh access token. */
+export async function insertEvent(
+  accessToken: string,
+  input: CalendarEventInput,
+): Promise<GoogleEvent> {
+  const res = await fetch(EVENTS_URL, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      summary: input.summary,
+      start: { dateTime: input.start, timeZone: input.timeZone },
+      end: { dateTime: input.end, timeZone: input.timeZone },
+    }),
+  });
+
+  const data = (await res.json().catch(() => ({}))) as GoogleEvent & { error?: unknown };
+  if (!res.ok) {
+    throw new Error(`Google Calendar insert failed (${res.status})`);
+  }
+  return data;
 }
