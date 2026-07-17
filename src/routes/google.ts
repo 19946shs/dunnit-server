@@ -4,6 +4,8 @@ import * as credentials from '../credentials';
 import {
   insertEvent,
   insertTask,
+  listTasks,
+  pendingFrom,
   refreshAccessToken,
   RefreshTokenInvalidError,
   setTaskCompleted,
@@ -55,6 +57,24 @@ async function accessTokenOrReauth(c: Ctx) {
 }
 
 // --- Google Tasks (the `!` sigil) ---
+
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * The caller's pending tasks: incomplete, and either overdue or undated. `today`
+ * is the caller's LOCAL date — see `pendingFrom` for the filtering rule.
+ */
+googleRoutes.get('/tasks', async (c) => {
+  const today = c.req.query('today');
+  if (!today || !DATE_RE.test(today)) {
+    return c.json({ error: 'today must be YYYY-MM-DD' }, 400);
+  }
+
+  const auth = await accessTokenOrReauth(c);
+  if ('error' in auth) return auth.error;
+
+  return c.json(pendingFrom(await listTasks(auth.accessToken), today));
+});
 
 /** Create a task on the caller's default list from a parsed `!` log. */
 googleRoutes.post('/tasks', async (c) => {

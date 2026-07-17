@@ -89,6 +89,46 @@ export async function insertTask(accessToken: string, input: TaskInput): Promise
 }
 
 /**
+ * List the caller's incomplete tasks from the default list. Google caps
+ * `maxResults` at 100; we pull a page and let the caller filter/slice, since the
+ * "overdue + undated" rule can't be expressed as a Tasks API query (`dueMax`
+ * would drop undated tasks).
+ */
+export async function listTasks(accessToken: string): Promise<GoogleTask[]> {
+  const url = `${TASKS_URL}?${new URLSearchParams({
+    showCompleted: 'false',
+    maxResults: '100',
+  })}`;
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+
+  const data = (await res.json().catch(() => ({}))) as { items?: GoogleTask[] };
+  if (!res.ok) throw new Error(`Google Tasks list failed (${res.status})`);
+  return data.items ?? [];
+}
+
+/** How many pending tasks we hand back. Pagination comes later. */
+export const PENDING_LIMIT = 15;
+
+/**
+ * The pending slice of a task list: **overdue** (due before `today`) or
+ * **undated**. Today's and future-dated tasks are dropped — today's already show
+ * inline on the Day screen. Oldest due first, undated last, capped at
+ * PENDING_LIMIT.
+ *
+ * `today` is the caller's LOCAL date (`YYYY-MM-DD`); the server has no timezone
+ * context. Google stores `due` as a date-only instant at UTC midnight, so
+ * comparing the leading `YYYY-MM-DD` lexically is exact.
+ */
+export function pendingFrom(tasks: GoogleTask[], today: string): GoogleTask[] {
+  return tasks
+    .filter((t) => !t.due || t.due.slice(0, 10) < today)
+    .sort((a, b) => (a.due ?? '9999').localeCompare(b.due ?? '9999'))
+    .slice(0, PENDING_LIMIT);
+}
+
+/**
  * Mark a task complete (or reopen it) via the Tasks API's native `status`.
  * Idempotent. If the task was deleted on Google (404/410) we treat it as a
  * no-op success so the log's checkbox still works.
